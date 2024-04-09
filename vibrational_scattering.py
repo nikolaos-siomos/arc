@@ -86,10 +86,10 @@ def vib_rotational_energy(J, molecular_parameters):
        Rotational energy of the molecule (J)
     """
 
-    B1 = molecular_parameters['B1']
+    B0 = molecular_parameters['B0']
     D0 = molecular_parameters['D0']
 
-    E_rot = (B1 * J * (J + 1) - D0 * J ** 2 * (J + 1) ** 2) * hc
+    E_rot = (B0 * J * (J + 1) - D0 * J ** 2 * (J + 1) ** 2) * hc
     return E_rot
 
 def vib_wavelength_shift(laser_wave, molecular_parameters):
