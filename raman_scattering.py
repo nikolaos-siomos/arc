@@ -26,7 +26,8 @@ from matplotlib import pyplot as plt
 
 from .constants import hc, k_b, eps_o
 from .utilities import number_density_at_pt
-from .make_gas import N2, O2, Ar, CO2, H2O
+from .make_gas import N2, O2, Ar, CO2, H2O, relative_concentrations
+from .filters import *
 import sys
 
 def rotational_energy(J, molecular_parameters):
@@ -282,7 +283,7 @@ def qm_xsection_rr_branch(n_incident, J, max_J, temperature, molecular_parameter
     E_factor = np.exp(-rotational_energy(J, molecular_parameters) / (k_b * temperature))
     
     # Conversion factor from CGS to SI units
-    CGS_to_SI = (4. * np.pi * eps_o) ** 2
+    #CGS_to_SI = (4. * np.pi * eps_o) ** 2
     
     # Population of rotational states corresponding to quantum number J
     P =  g * (2. * J + 1.) * E_factor
@@ -671,7 +672,7 @@ def delta_mol_by_summing(ds_polarized, ds_depolarized):
 
 class RotationalRaman:
 
-    def __init__(self, wavelength, temperature, max_J=40, N2_parameters=None, O2_parameters=None, Ar_parameters=None, CO2_parameters=None, H2O_parameters=None, optical_filter = None, istotal = False):
+    def __init__(self, wavelength, temperature, relative_concentrations, max_J=40, optical_filter = None, istotal = False):
         """
         This class calculates the volume depolarization ratio of the molecular
         backscatter signal detected with a polarization lidar.
@@ -683,39 +684,22 @@ class RotationalRaman:
            The lidar emission wavelength (nm)
        temperature: float
            The atmospheric temperature (K)
+        relative_concentrations: dictionary with floats
+            Relative concentrations of atmospheric gases
         max_J : int
            The number of Raman lines to consider in each branch.
 
         """
         
         if istotal == True and optical_filter != None:
-            print("-- Warning!: A filter transmittion function was provided but the 'istotal' parameter was set to True. Please not that the filter won't be taken into account as it not relevant to the total scattering cross section in lidar applications.")
+            print("-- Warning!: A filter transmission function was provided but the 'istotal' parameter was set to True. Please not that the filter won't be taken into account as it is not relevant to the total scattering cross section in lidar applications.")
             optical_filter = None
         
-        if N2_parameters:
-            self.N2_parameters = N2_parameters
-        else:
-            self.N2_parameters = N2(wavelength)
-
-        if O2_parameters:
-            self.O2_parameters = O2_parameters
-        else:
-            self.O2_parameters = O2(wavelength)
-
-        if CO2_parameters:
-            self.CO2_parameters = CO2_parameters
-        else:
-            self.CO2_parameters = CO2(wavelength)
-
-        if Ar_parameters:
-            self.Ar_parameters = Ar_parameters
-        else:
-            self.Ar_parameters = Ar(wavelength)
-
-        if H2O_parameters:
-            self.H2O_parameters = H2O_parameters
-        else:
-            self.H2O_parameters = H2O(wavelength)            
+        self.N2_parameters = N2(wavelength, relative_concentrations['N2'])
+        self.O2_parameters = O2(wavelength, relative_concentrations['O2'])
+        self.Ar_parameters = Ar(wavelength, relative_concentrations['Ar'])
+        self.CO2_parameters = CO2(wavelength, relative_concentrations['CO2'])
+        self.H2O_parameters = H2O(wavelength, relative_concentrations['H2O'])           
             
         self.optical_filter = optical_filter
         self.temperature = temperature
@@ -1714,244 +1698,3 @@ class RotationalRaman:
     #     dl_stokes = 1 / (1 / self.wavelength + dn_stokes * 10 ** -9)
     #     dl_astokes = 1 / (1 / self.wavelength + dn_astokes * 10 ** -9)
     #     return dl_astokes, dl_stokes, ds_astokes, ds_stokes
-
-
-class BaseFilter:
-    """ Base class containing only plotting methods. Actual filter functions should be implemented in the
-    subclasses. """
-
-    def plot(self, xmin, xmax):
-        fig = plt.figure()
-        ax = plt.subplot(111)
-        self.draw_plot(ax, xmin, xmax, twin_axis=False)
-        plt.draw()
-        plt.show()
-
-    def draw_plot(self, main_axis, xmin, xmax, twin_axis=True, color_str='-g', label='Filter'):
-        if twin_axis:
-            ax = main_axis.twinx()
-        else:
-            ax = main_axis
-        filter_wavelengths = np.linspace(xmin, xmax, 1000)
-
-        filter_efficiency = self(filter_wavelengths)
-
-        line_1, = ax.plot(filter_wavelengths, filter_efficiency, color_str,
-                          label=label)
-        ax.set_ylabel('Filter efficiency')
-        ax.yaxis.label.set_color('green')
-        ax.tick_params(axis='y', colors='green')
-        ax.set_ylim(0, 1.1)
-        return label, line_1, ax
-
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError("Filter functions should be implemented in the subclasses. ")
-
-
-class GaussianFilter(BaseFilter):
-    def __init__(self, wavelength, fwhm, transmittance=1, off_band_transmittance=0):
-        '''
-        This simple class represents a gausian filter function. To generate
-        a new filter use::
-
-           my_filter = FilterFunction(wavelegnth, fwhm)
-
-        with
-
-        wavelegnth - The central wavelength of the filter in nm
-        fwhm       - The fwhm of the filter in nm
-
-        If the the filter is called with a wavelegnth (in nm) as an argument
-        it will return the  efficiency at this wavelength, for example::
-
-           my_filter = FilterFunction(532, 5)
-           my_filter(532) # Will return 1.0
-           my_filter(535) # Will return 0.3685
-        '''
-        self.wavelength = wavelength
-        self.fwhm = fwhm
-        self.c = fwhm / 2.354820045031
-
-        self.tranmittance = transmittance
-        self.off_band_transmittance = off_band_transmittance
-
-    def __call__(self, wavelength):
-        value = self.tranmittance * np.exp(-(wavelength - self.wavelength)
-                                            ** 2 / (2 * self.c ** 2)) + self.off_band_transmittance
-        return value
-
-class LorentzianFilter(BaseFilter):
-    def __init__(self, wavelength, fwhm, transmittance=1, off_band_transmittance=0):
-        '''
-        This simple class represents a gausian filter function. To generate
-        a new filter use::
-
-           my_filter = FilterFunction(wavelegnth, fwhm)
-
-        with
-
-        wavelegnth - The central wavelength of the filter in nm
-        fwhm       - The fwhm of the filter in nm
-
-        If the the filter is called with a wavelegnth (in nm) as an argument
-        it will return the  efficiency at this wavelength, for example::
-
-           my_filter = FilterFunction(532, 5)
-           my_filter(532) # Will return 1.0
-           my_filter(535) # Will return 0.3685
-        '''
-        self.wavelength = wavelength
-        self.fwhm = fwhm
-
-        self.gamma = fwhm / 2.
-
-        self.tranmittance = transmittance
-        self.off_band_transmittance = off_band_transmittance
-
-    def __call__(self, wavelength):
-        
-        # value_max = 1 / (2. * np.pi * self.fwhm)  
-        value = (self.tranmittance) * self.gamma**2 / ((wavelength - self.wavelength)** 2 + self.gamma**2)
-        
-        return value
-
-class DoubleLorentzianFilter(BaseFilter):
-    def __init__(self, wavelength, fwhm, transmittance=1, off_band_transmittance=0):
-        '''
-        This simple class represents a gausian filter function. To generate
-        a new filter use::
-
-           my_filter = FilterFunction(wavelegnth, fwhm)
-
-        with
-
-        wavelegnth - The central wavelength of the filter in nm
-        fwhm       - The fwhm of the filter in nm
-
-        If the the filter is called with a wavelegnth (in nm) as an argument
-        it will return the  efficiency at this wavelength, for example::
-
-           my_filter = FilterFunction(532, 5)
-           my_filter(532) # Will return 1.0
-           my_filter(535) # Will return 0.3685
-        '''
-        self.wavelength = wavelength
-        self.fwhm = fwhm
-
-        self.gamma = fwhm / 2.
-
-        self.tranmittance = transmittance
-        self.off_band_transmittance = off_band_transmittance
-
-    def __call__(self, wavelength):
-        
-        value_max = 1 / (2. * np.pi * self.fwhm)  
-        value = (self.tranmittance) * self.gamma**2 / ((wavelength - self.wavelength)** 2 + self.gamma**2)
-        
-        return value
-
-
-class SquareFilter(BaseFilter):
-    def __init__(self, wavelength, width, transmittance=1, off_band_transmittance=0):
-        '''
-        This simple class represents a square filter function. To generate
-        a new filter use::
-
-           my_filter = FilterFunction(wavelegnth, width, transmittacnce)
-
-        '''
-        self.wavelength = wavelength
-        self.width = width
-        self.min_wavelength = wavelength - width / 2.
-        self.max_wavelength = wavelength + width / 2.
-        self.transmittance = transmittance
-        self.off_band_transmittance = off_band_transmittance
-
-    def __call__(self, wavelength):
-        w = np.array(wavelength)
-        values = np.ones_like(w)
-        transmitting_bins = (w > self.min_wavelength) & (w < self.max_wavelength)
-        values[transmitting_bins] = self.transmittance
-        values[~transmitting_bins] = self.off_band_transmittance
-        return values
-
-
-class CombinedFilter(BaseFilter):
-    def __init__(self, filters):
-        """
-        A combination of several filters. The results will be the multiplication of all filters.
-
-        Parameters
-        ----------
-        filters : list
-           A list of filters
-        """
-        self.filters = filters
-
-    def __call__(self, wavelength):
-        filter_values = [f(wavelength) for f in self.filters]
-        values = np.prod(filter_values, axis=0)
-        return values
-
-
-class FileFilter(BaseFilter):
-    def __init__(self, file_path, interpolation='linear', off_band_transmittance = 0):
-        """
-        A filter with transmission given by a text file.
-
-        Currently assumes a simple two-column, tab-delimited file. The first columne should be the wavelength
-        in nm and the second the transmittance at the specified wavelength (0 - 1).
-
-        Parameters
-        ----------
-        file_path : str
-           Path to filter function.
-        interpolation : str
-           The kind of interpolation between provided values. One of 'linear', 'nearest', 'zero', 'slinear',
-           'quadratic', 'cubic'. Corresponds to 'kind' argument of interp1d.
-
-        """
-        self.file_path = file_path
-        self.interpolation = interpolation
-        self.off_band_transmittance = off_band_transmittance
-        self.read_data()
-
-    def read_data(self):
-        # TODO: Make this more flexible using pandas?
-        data = np.loadtxt(self.file_path, delimiter='\t')
-        self.wavelengths = data[:, 0]
-        self.transmittance = data[:, 1]
-        self.transmission_function = interp1d(self.wavelengths, self.transmittance, kind=self.interpolation,bounds_error=False,fill_value=self.off_band_transmittance)
-
-    def __call__(self, wavelength):
-        return self.transmission_function(wavelength)
-
-
-class CustomFilter(BaseFilter):
-    def __init__(self, wavelengths, transmittances, interpolation='linear', off_band_transmittance = 0):
-        """
-        A filter with transmission given by a two arrays.
-
-        This is a thin wrapper around numpy's interp1d.
-
-        Parameters
-        ----------
-        wavelengths : numpy.array
-           Wavelength [nm]
-        transmittances : numpy.array
-            Filter transmittance at the corresponding wavelength (from 0 to 1).
-        interpolation : str
-            The kind of interpolation between provided values. One of 'linear', 'nearest', 'zero', 'slinear',
-            'quadratic', 'cubic'. Corresponds to 'kind' argument of interp1d.
-        off_band_transmittance : float scalar
-            Fill transmittance value for the regions out of the provided filter spectrum
-        """
-        
-        self.wavelength = wavelengths
-        self.transmittances = transmittances
-        self.interpolation = interpolation
-        self.off_band_transmittance = off_band_transmittance
-        self.transimssion_function = interp1d(wavelengths, transmittances, kind=interpolation, bounds_error=False,fill_value=off_band_transmittance)
-
-    def __call__(self, wavelength):
-        return self.transimssion_function(wavelength)

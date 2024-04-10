@@ -7,13 +7,26 @@ Created on Tue Mar  1 15:49:30 2022
 """
 
 from .molecular_properties import epsilon_N2, epsilon_O2, epsilon_Ar, epsilon_CO2, epsilon_H2O
-
+from .constants import eps_o
 from .refractive_index import n_N2, n_O2, n_Ar, n_CO2, n_H2O
 
 import numpy as np
 
+def relative_concentrations(concentration = 0., forward = None):
+    if forward == None:
+        relative_concentrations = {'N2': 0.78084, 
+                                   'O2': 0.20946, 
+                                   'Ar': 0.009340, 
+                                   'CO2': 0.00036, 
+                                   'H2O': 0.}
+        
+        return relative_concentrations
+    
+    else:
+        return concentration
+    
 # def N2(wavelength, relative_concentration = 0.78084, alpha_method = 'combined'):
-def N2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.79, alpha_method = 'combined'):
+def N2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.78084, alpha_method = 'combined'):
     
     wavenumber = 10 ** 9 / wavelength
     
@@ -28,22 +41,26 @@ def N2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentrat
     N2_parameters = {'name': "N_{2}",
                      'molecule_type': 'linear',
                      'B0': 1.989570 * 1E2, # from Weitkamp 2005, in m-1
-                     'D0': 5.76 * 1E-4, # from Behrend 2002, in m-1
+                     'D0': 5.76 * 1E-4, # from Weitkamp 2005, in m-1
+                     'B1': 1.97219 * 1E2, # from Weitkamp 2005, in m-1
                      'I': 1, # from Behrend 2002
-                     'alpha_square': alpha_square,  
-                     'gamma_square': gamma_square,  
+                     'alpha_square': alpha_square,  #3.17E-60, 
+                     'gamma_square': gamma_square,  #0.52E-60, 
+                     'alpha_square_prime': 2.62E-14/(4*np.pi*eps_o)**2, # from Weitkamp 2005, p. 245
+                     'gamma_square_prime': 4.23E-14/(4*np.pi*eps_o)**2, # from Weitkamp 2005, p. 245
                      'epsilon': epsilon,  
                      'g': [6, 3], # from Behrend 2002 for even/odd J - alowed molecular spin values depending on J
                      'relative_concentration': relative_concentration,
                      'refractive_index': RI_N2,
                      'number_concentration': N_N2,
                      'pressure': pressure,
-                     'temperature': temperature}   
+                     'temperature': temperature,
+                     'n_vib': 233070.} # from Weitkamp 2005, p. 251
     
     return(N2_parameters)
 
 # def O2(wavelength, relative_concentration = 0.20946, alpha_method = 'combined'):
-def O2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.21, alpha_method = 'combined'):
+def O2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.20946, alpha_method = 'combined'):
     
     wavenumber = 10 ** 9 / wavelength
     
@@ -56,23 +73,27 @@ def O2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentrat
 
     O2_parameters = {'name': "O_{2}",
                      'molecule_type': 'linear',
-                     'B0': 1.43768 * 1E2, # from Behrend 2002, in m-1
-                     'D0': 4.85 * 1E-4, # from Behrend 2002, in m-1
+                     'B0': 1.43768 * 1E2, # from Weitkamp 2005, in m-1
+                     'D0': 4.85 * 1E-4, # from Weitkamp 2005, in m-1
+                     'B1': 1.42188 * 1E2, # from Weitkamp 2005, in m-1
                      'I': 0, # from Behrend 2002
-                     'alpha_square': alpha_square, 
-                     'gamma_square': gamma_square,  
+                     'alpha_square':  alpha_square, #2.66E-60,
+                     'gamma_square':  gamma_square,  #1.26E-60, 
+                     'alpha_square_prime': 1.63E-14/(4*np.pi*eps_o)**2, # from Weitkamp 2005, p. 245
+                     'gamma_square_prime': 6.46E-14/(4*np.pi*eps_o)**2, # from Weitkamp 2005, p. 245
                      'epsilon': epsilon, 
                      'g': [0, 1], # from Behrend 2002 for even/odd J
                      'relative_concentration': relative_concentration,
                      'refractive_index': RI_O2,
                      'number_concentration': N_O2,
                      'pressure': pressure,
-                     'temperature': temperature}   
+                     'temperature': temperature,
+                     'n_vib': 155640.} # from Weitkamp 2005, p. 251
     
     return(O2_parameters)
 
 # def Ar(wavelength, relative_concentration = 0.009340, alpha_method = 'combined'):
-def Ar(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0., alpha_method = 'combined'):
+def Ar(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.009340, alpha_method = 'combined'):
     
     wavenumber = 10 ** 9 / wavelength
 
@@ -99,7 +120,7 @@ def Ar(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentrat
     return(Ar_parameters)
 
 # def CO2(wavelength, relative_concentration = 0.00036, alpha_method = 'combined'):
-def CO2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0., alpha_method = 'combined'):
+def CO2(wavelength, pressure = 1013.25, temperature = 293.15, relative_concentration = 0.00036, alpha_method = 'combined'):
     
     wavenumber = 10 ** 9 / wavelength
     
