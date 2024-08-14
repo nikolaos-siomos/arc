@@ -4,6 +4,7 @@ Basic physics constants used in all submodules.
 Values taken from http://physics.nist.gov/cuu/Constants/index.html (2014 values)
 """
 h = 6.626070040E-34  # plank constant in J s
+
 c = 299792458.  # speed of light in m s-1
 
 # Molar gas constant
@@ -28,4 +29,5 @@ hc = h * c  # m * J
 # plank constant * speed of light / Boltzmann constant in cm * K
 hc_k = h * c / k_b  # m * K
 
-
+# Conversion factor of the electric polarizability from atomic units to F 
+au_to_SI = 1.64877727436E-41
