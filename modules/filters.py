@@ -531,7 +531,7 @@ def check_parameter_type(parameters, allowed_parameter_types):
     
     for key in parameters.keys():
         if type(parameters[key]) not in allowed_parameter_types[key]:
-            raise Exception(f"--Error: The type of parameter {key} is wrong. Please use one of: {allowed_parameter_types[key]}")
+            raise Exception(f"--Error: The type of parameter {key} ({type(parameters[key])}) is wrong. Please use one of: {allowed_parameter_types[key]}")
     
     return
 
@@ -652,17 +652,17 @@ def check_filter_parameters(filter_parameters):
                           'peak_transmission' : 1.}
     
     allowed_parameter_types = {'transmission_shape' : [str], 
-                               'AOI' : [float, int], 
-                               'ref_index_IF' : [float, int], 
+                               'AOI' : [float, np.float64, int, np.int64], 
+                               'ref_index_IF' : [float, np.float64, int, np.int64], 
                                'filter_path' : [str, type(None)],
                                'filter_file_delimiter' : [str],
                                'filter_file_header_rows' : [int],
                                'wavelengths' : [np.ndarray],
                                'transmissions' : [np.ndarray],
                                'extra_shift' : [float, int], 
-                               'central_wavelength' : [float, int], 
-                               'bandwidth' : [float, int],
-                               'peak_transmission' : [float, int]}
+                               'central_wavelength' : [float, np.float64, int, np.int64], 
+                               'bandwidth' : [float, np.float64, int, np.int64],
+                               'peak_transmission' : [float, np.float64, int, np.int64]}
     
     check_parameter_type(parameters = filter_parameters,
                          allowed_parameter_types = allowed_parameter_types) 

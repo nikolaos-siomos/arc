@@ -13,10 +13,10 @@ valid_methods = {"N2" : ["griesmann_and_burnett_N2", "boerzsoenyi_N2", "peck_and
                  "H2O": ["cidor_H2O"]}
 
 lower_limit = {"griesmann_and_burnett_N2" :  145., 
-               "boerzsoenyi_N2"           :  270., 
+               "boerzsoenyi_N2"           :  400., 
                "peck_and_khanna_N2"       : 1000.,
                "smith_O2"                 :  185., 
-               "zhang_O2"                 :  288.,
+               "zhang_O2"                 :  293.,
                "bideau_mehu_larsen_Ar"    :  141., 
                "boerzsoenyi_Ar"           :  400.,
                "peck_and_fisher_Ar"       :  468.,
@@ -24,10 +24,10 @@ lower_limit = {"griesmann_and_burnett_N2" :  145.,
                "old_CO2"                  :  481., 
                "cidor_H2O"                :  350.}    
 
-upper_limit = {"griesmann_and_burnett_N2" :  270., 
+upper_limit = {"griesmann_and_burnett_N2" :  400., 
                "boerzsoenyi_N2"           : 1000., 
                "peck_and_khanna_N2"       : 2058.,
-               "smith_O2"                 :  288., 
+               "smith_O2"                 :  293., 
                "zhang_O2"                 : 1800.,
                "bideau_mehu_larsen_Ar"    :  400., 
                "boerzsoenyi_Ar"           : 1000.,
@@ -138,8 +138,8 @@ def peck_and_khanna_N2(x):
 
     x = x * 1E-3  # the original formula is expressed in μm
 
-    e_o = 101325
-    T_o = 273.15
+    e_o = 101300
+    T_o = 273.16
 
     N_o = e_o / (k_b * T_o)  # Number density in the measurement conditions of the RI
 
@@ -469,8 +469,8 @@ def alpha_gas(wavelength, gas):
     if not isinstance(wavelength, int) and not isinstance(wavelength, float):
         raise Exception(("-- Error: The provided wavelength must be a scalar float or integer"))
     
-    if wavelength < 350. or wavelength > 1200.:
-        raise Exception(f'The selected wavelength ({wavelength} nm) is out of ARC limits: 350 to 1200 nm')
+    # if wavelength < 350. or wavelength > 1200.:
+    #     raise Exception(f'The selected wavelength ({wavelength} nm) is out of ARC limits: 350 to 1200 nm')
         
     if gas not in supported_gases:
         raise  Exception(f'The provided gas ({gas}) is not supported. Please use one of: {supported_gases}')

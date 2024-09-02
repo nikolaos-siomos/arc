@@ -107,8 +107,10 @@ def placzek_teller(J, branch):
     elif branch == 'O':
         X = (3. / 2.) * (J * (J - 1.)) / ((2. * J - 1.) * (2. * J + 1.))  
         
-        if (isinstance(J, float) or isinstance(J, int)) and J < 2:
-            X = np.nan
+        print()
+        if (isinstance(J, float) or isinstance(J, int)):
+            if J < 2:
+                X = np.nan
         else:
            X[J < 2] = np.nan 
 

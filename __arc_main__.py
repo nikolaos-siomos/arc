@@ -116,7 +116,7 @@ class arc:
                 self.relative_concentrations = {'N2' : 0.780796,
                                                 'O2' : 0.209448,
                                                 'Ar' : 0.009339,
-                                                'CO2': 0.000415,
+                                                'CO2': 0.000416,
                                                 'H2O': 0.}
             else:
                 keys = ['N2', 'O2', 'Ar', 'CO2', 'H2O']
@@ -374,12 +374,10 @@ class arc:
             elif mldr_type == 'main_line':
                 cross_section_type = 'Q'       
             
-            mldr_depol = 0.750
             
+            depol_p = 4. / 7.
             
-            depol_p = 1. / (1. + mldr_depol)
-            
-            depol_s = mldr_depol / (1. + mldr_depol)
+            depol_s = 3. / 7.
             
             if mldr_type in ['main_line', 'full']:
                 xsection_pol = arc.cross_section(self, 
@@ -392,7 +390,7 @@ class arc:
                 mldr = depol_s * xsection_depol / (xsection_pol + xsection_depol * depol_p)
             
             if mldr_type == 'depolarized':
-                mldr = mldr_depol
+                mldr = 3. /4.
                 
             if mldr_type == 'polarized':
                 mldr = 0.
