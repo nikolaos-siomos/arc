@@ -16,7 +16,7 @@ def wavenumber_shift_to_wavelength(wavelength, delta_nu):
     Parameters: 
     -------------
     wavelength: float
-        Initial wavelength [nm]
+        Wavelength before shift [nm]
     
     delta_nu: float
         Line wavenumber shift [m⁻¹].
@@ -24,7 +24,7 @@ def wavenumber_shift_to_wavelength(wavelength, delta_nu):
     Returns
     -------
     lamda_nm : float
-       Shifted wavelength [nm]
+       Wavelength after shift [nm]
     
     """
     
@@ -310,14 +310,14 @@ def raman_shift(wavelength, max_J, molecular_parameters, mode, branch):
 
     return lamda_line
 
-def raman_lines(emitted_wavelength, max_J, temperature, molecular_parameters, 
+def raman_lines(incident_wavelength, max_J, temperature, molecular_parameters, 
                 branch, mode, backscattering = False):
     """ Calculates the rotational Raman backsattering cross section for the Stokes/AntiStokes/Central
     branches for quantum number J at a temperature T.
 
     Parameters
     ----------
-    emitted_wavelength : float
+    incident_wavelength : float
        The emitted wavelength in air [nm]
        
     max_J : float
@@ -359,7 +359,7 @@ def raman_lines(emitted_wavelength, max_J, temperature, molecular_parameters,
 
     # Wavelengths per line
     lamda_line = \
-        raman_shift(emitted_wavelength, 
+        raman_shift(incident_wavelength, 
                     max_J = max_J, 
                     molecular_parameters = molecular_parameters, 
                     mode = mode, 
@@ -416,7 +416,7 @@ def raman_lines(emitted_wavelength, max_J, temperature, molecular_parameters,
 
     return b_s, lamda_line
 
-def xsection_polarized(emitted_wavelength, molecular_parameters, mode = 'rotational_raman', 
+def xsection_polarized(incident_wavelength, molecular_parameters, mode = 'rotational_raman', 
                        temperature = 273.15, backscattering = False):
     """ Calculates the backsattering cross section of the isotropically scattered part 
     of the Cabannes line for a molecule or atom (She et al. 2001). The equation
@@ -424,8 +424,8 @@ def xsection_polarized(emitted_wavelength, molecular_parameters, mode = 'rotatio
     
     Parameters
     ----------
-    emitted_wavelength : float
-       The emmitted wavelength in air [nm]
+    incident_wavelength : float
+        The wavelength of the radiation incedent to the molecules, in air (nm)
 
     molecular_parameters : dict
        A dictionary containing molecular parameters.
@@ -455,7 +455,7 @@ def xsection_polarized(emitted_wavelength, molecular_parameters, mode = 'rotatio
         
     if mode == 'rotational_raman':
         # Cabannes wavelength 
-        lamda_line = emitted_wavelength
+        lamda_line = incident_wavelength
         
         # Probability of being at the vibrational energy state V = 0
         P_vib = 1.
@@ -469,7 +469,7 @@ def xsection_polarized(emitted_wavelength, molecular_parameters, mode = 'rotatio
     elif mode in ['vibrational_raman_N2', 'vibrational_raman_O2']:
         # Pure VE line wavelength
         lamda_line = \
-            wavenumber_shift_to_wavelength(emitted_wavelength, 
+            wavenumber_shift_to_wavelength(incident_wavelength, 
                                            delta_nu = -molecular_parameters['nu_vib'])
 
         # Probability of being at the vibrational energy state V = 0

@@ -33,9 +33,7 @@ class BaseFilter:
     
         line_1, = ax.plot(filter_wavelengths, filter_transmission, color_str,
                           label=label)
-        ax.set_ylabel('Filter efficiency')
-        ax.yaxis.label.set_color('green')
-        ax.tick_params(axis='y', colors='green')
+        ax.set_ylabel('Interference Filter Transmission')
         ax.set_ylim(0, 1.1 * np.nanmax(filter_transmission))
         return label, line_1, ax
     
@@ -140,7 +138,7 @@ class LorentzianFilter(BaseFilter):
         return value
 
 
-class SquareFilter(BaseFilter):
+class TophatFilter(BaseFilter):
     def __init__(self, central_wavelength, bandwidth, AOI = 0., ref_index_IF = 2, peak_transmission = 1.):
         
         '''
@@ -169,7 +167,7 @@ class SquareFilter(BaseFilter):
         If the filter is called with the wavelegnth [nm] as an argument
         it will return the transmission at this wavelength, for example::
         
-           my_filter = SquareFilter(532, 5)
+           my_filter = TophatFilter(532, 5)
            my_filter(532) # Will return 1.0
         '''
 
@@ -362,11 +360,11 @@ def get_filter_transmission(filter_parameters = None):
         parameters listed with the following keys:
             
             transmission_shape (str) 
-                Use one of: 'Gaussian', 'Lorentzian', 'Square', 'Custom'. 
+                Use one of: 'Gaussian', 'Lorentzian', 'Tophat', 'Custom'. 
             
             AOI (float)
                 Angle of incidence (AOI) of the incident light with respect to 
-                the optical axis of the IFF.
+                the optical axis of the IF.
                 Defaults to 0.
 
             ref_index_IF (float)
@@ -466,7 +464,7 @@ def get_filter_transmission(filter_parameters = None):
                 
             transmission_function = {'Gaussian' : GaussianFilter,
                                      'Lorentzian' : LorentzianFilter,
-                                     'Square' : SquareFilter}
+                                     'Tophat' : TophatFilter}
 
             central_wavelength = float(filter_parameters['central_wavelength'])
     
@@ -494,7 +492,7 @@ def AOI_wavelength_shift(wavelength, AOI, ref_index_IF):
 
     AOI: float
         Angle of incidence (AOI) of the incident light with respect to 
-        the optical axis of the IFF.
+        the optical axis of the IF.
 
     ref_index_IF : float
         Effective refractive index of the IF.
@@ -537,7 +535,7 @@ def check_parameter_type(parameters, allowed_parameter_types):
 
 def check_parameter_values(filter_parameters, default_used):
     
-    allowed_shapes = ['Gaussian', 'Lorentzian', 'Square', 'Custom']
+    allowed_shapes = ['Gaussian', 'Lorentzian', 'Tophat', 'Custom']
     
     non_custom_parameters = ['central_wavelength', 'bandwidth', 'peak_transmission']
     
