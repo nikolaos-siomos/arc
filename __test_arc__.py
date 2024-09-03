@@ -56,9 +56,9 @@ class cross_sections_summed(unittest.TestCase):
         calculated_S = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_dry,
+                      molar_fractions = c_dry,
                       backscattering = False)
             
             calculated_ray[i] = rrb.cross_section(cross_section_type = 'full')
@@ -104,9 +104,9 @@ class cross_sections_summed(unittest.TestCase):
         calculated_S = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_moist,
+                      molar_fractions = c_moist,
                       backscattering = False)
             
             calculated_ray[i] = rrb.cross_section(cross_section_type = 'full')
@@ -152,9 +152,9 @@ class cross_sections_summed(unittest.TestCase):
         calculated_S = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_dry,
+                      molar_fractions = c_dry,
                       backscattering = True)
             
             calculated_ray[i] = rrb.cross_section(cross_section_type = 'full')
@@ -200,9 +200,9 @@ class cross_sections_summed(unittest.TestCase):
         calculated_S = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_moist,
+                      molar_fractions = c_moist,
                       backscattering = True)
             
             calculated_ray[i] = rrb.cross_section(cross_section_type = 'full')
@@ -256,7 +256,7 @@ class cross_sections_lines(unittest.TestCase):
         calculated_wv_S_HJ = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
                       backscattering = True)
             
@@ -307,7 +307,7 @@ class cross_sections_lines(unittest.TestCase):
         calculated_wv_S_HJ = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
                       backscattering = True)
             
@@ -356,7 +356,7 @@ class cross_sections_lines(unittest.TestCase):
         calculated_wv_S_HJ = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
                       backscattering = True)
             
@@ -401,9 +401,9 @@ class mldr(unittest.TestCase):
         calculated_dpl = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_dry, 
+                      molar_fractions = c_dry, 
                       backscattering = True)
             
             calculated_ray[i] = rrb.mldr(mldr_type = 'full')
@@ -433,9 +433,9 @@ class mldr(unittest.TestCase):
         calculated_dpl = np.nan * np.zeros(wavelengths.size)
         
         for i in range(len(wavelengths)):
-            rrb = arc(emitted_wavelength = wavelengths[i], 
+            rrb = arc(incident_wavelength = wavelengths[i], 
                       temperature = T1, 
-                      relative_concentrations = c_moist, 
+                      molar_fractions = c_moist, 
                       backscattering = True)
             
             calculated_ray[i] = rrb.mldr(mldr_type = 'full')
