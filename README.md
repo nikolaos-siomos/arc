@@ -15,7 +15,7 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
-git remote add origin https://gitlab.lrz.de/ls-mayer/actris/arc_dev.git
+git remote add origin https://github.com/nikolaos-siomos/arc.git
 git branch -M main
 git push -uf origin main
 ```
