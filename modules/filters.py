@@ -85,9 +85,9 @@ class GaussianFilter(BaseFilter):
         self.peak_transmission = peak_transmission
         
     def __call__(self, wavelength):
-        value = self.peak_transmission * \
+        values = self.peak_transmission * \
                 np.exp(-(wavelength - self.shifted_central_wavelength) ** 2 / (2 * self.c ** 2))
-        return value
+        return values
 
 class LorentzianFilter(BaseFilter):
     def __init__(self, central_wavelength, bandwidth, AOI = 0., ref_index_IF = 2, peak_transmission = 1.):
@@ -133,13 +133,13 @@ class LorentzianFilter(BaseFilter):
         self.gamma = bandwidth / 2.
 
     def __call__(self, wavelength):
-        value = (self.peak_transmission) * \
+        values = (self.peak_transmission) * \
             self.gamma**2 / ((wavelength - self.shifted_central_wavelength)** 2 + self.gamma**2)
-        return value
+        return values
 
 
 class TophatFilter(BaseFilter):
-    def __init__(self, central_wavelength, bandwidth, AOI = 0., ref_index_IF = 2, peak_transmission = 1.):
+    def __init__(self, central_wavelength, bandwidth, AOI = 0., ref_index_IF = 2, peak_transmission = 1., off_band_transmission = 0.):
         
         '''
         This class creates an interference filter transmission curve with a 
@@ -161,6 +161,11 @@ class TophatFilter(BaseFilter):
 
         peak_transmission: float
             The maximum constant transmission of the filter. Defaults to: 1.
+        
+        off_band_transmission: float 
+    		The transmission values at the off-band part of a Tophat filter. 
+            It will be ignored if the transmission_shape is not set to 
+            'Tophat'. Defaults to 0.
 
         Calling
         ----------
@@ -183,18 +188,27 @@ class TophatFilter(BaseFilter):
         
         self.bandwidth = bandwidth
         self.peak_transmission = peak_transmission
+        self.off_band_transmission = off_band_transmission
         self.min_wavelength = shifted_central_wavelength - bandwidth / 2.
         self.max_wavelength = shifted_central_wavelength + bandwidth / 2.
         
     def __call__(self, wavelength):
-       
-        w = np.array(wavelength)
-        values = np.ones_like(w)
-        transmitting_bins = (w > self.min_wavelength) & (w < self.max_wavelength)
         
-        values[transmitting_bins] = self.peak_transmission
-        values[~transmitting_bins] = 0.
+        if type(wavelength) in [int, float]:
+            if wavelength > self.min_wavelength and wavelength < self.max_wavelength:
+                values = self.peak_transmission
+            else:
+                values = self.off_band_transmission
+        else:
+            w = np.array(wavelength)
+
+            values = self.peak_transmission * np.ones(w.size)
     
+            non_transmitting_bins = (w < self.min_wavelength) | (w > self.max_wavelength)
+            
+            if non_transmitting_bins.any():
+                values[non_transmitting_bins] = self.off_band_transmission
+
         return values
     
 
@@ -471,13 +485,25 @@ def get_filter_transmission(filter_parameters = None):
             bandwidth = float(filter_parameters['bandwidth'])
     
             peak_transmission = float(filter_parameters['peak_transmission'])
-           
-            filter_transmission = \
-                transmission_function[transmission_shape](central_wavelength = central_wavelength, 
-                                                          bandwidth = bandwidth,
-                                                          peak_transmission = peak_transmission,
-                                                          AOI = AOI,
-                                                          ref_index_IF = ref_index_IF)
+
+            off_band_transmission = float(filter_parameters['off_band_transmission'])
+
+            if transmission_shape == 'Tophat':
+                filter_transmission = \
+                    transmission_function[transmission_shape](central_wavelength = central_wavelength, 
+                                                              bandwidth = bandwidth,
+                                                              peak_transmission = peak_transmission,
+                                                              off_band_transmission = off_band_transmission,
+                                                              AOI = AOI,
+                                                              ref_index_IF = ref_index_IF)
+            
+            else:
+                filter_transmission = \
+                    transmission_function[transmission_shape](central_wavelength = central_wavelength, 
+                                                              bandwidth = bandwidth,
+                                                              peak_transmission = peak_transmission,
+                                                              AOI = AOI,
+                                                              ref_index_IF = ref_index_IF)
             
     return(filter_transmission)
 
@@ -508,168 +534,7 @@ def AOI_wavelength_shift(wavelength, AOI, ref_index_IF):
     ref_index_air = 1.
     
     aoi_wavelengh_shift = wavelength * \
-        (np.sqrt(1. - ((ref_index_air / ref_index_IF) * np.sin(AOI))**2) - 1.)
+        (np.sqrt(1. - ((ref_index_air / ref_index_IF) * np.sin(np.deg2rad(AOI)))**2) - 1.)
     
     return aoi_wavelengh_shift
 
-def fill_missing_parameters(parameters, default_parameters):
-    
-    default_used = dict()
-    
-    for key in default_parameters.keys():
-        if key not in parameters.keys():
-            parameters[key] = default_parameters[key]
-            default_used[key] = True
-        else:
-            default_used[key] = False
-            
-    return(parameters, default_used)
-
-def check_parameter_type(parameters, allowed_parameter_types):
-    
-    for key in parameters.keys():
-        if type(parameters[key]) not in allowed_parameter_types[key]:
-            raise Exception(f"--Error: The type of parameter {key} ({type(parameters[key])}) is wrong. Please use one of: {allowed_parameter_types[key]}")
-    
-    return
-
-def check_parameter_values(filter_parameters, default_used):
-    
-    allowed_shapes = ['Gaussian', 'Lorentzian', 'Tophat', 'Custom']
-    
-    non_custom_parameters = ['central_wavelength', 'bandwidth', 'peak_transmission']
-    
-    custom_parameters = ['filter_path', 'filter_file_delimiter', 
-                         'filter_file_header_rows', 'wavelengths', 
-                         'transmissions', 'extra_shift']
-
-    file_parameters = ['filter_file_delimiter', 'filter_file_header_rows']
-
-    allowed_delimiters = [' ', ',', ':', ';', '\t']
-    
-    if filter_parameters['transmission_shape'] not in allowed_shapes:
-        raise Exception(f"-- Error: The provided transmission_shape parameter ({filter_parameters['transmission_shape']}) was not recognized. Please use one of: {allowed_shapes}")
-    
-    if filter_parameters['ref_index_IF'] < 1. or filter_parameters['ref_index_IF'] > 3:
-        raise Exception(f"-- Error: The provided ref_index_IF parameter {filter_parameters['ref_index_IF']} is not realistic")
-
-    if filter_parameters['transmission_shape'] == 'Custom':
-        
-        if filter_parameters['filter_path'] is None and (filter_parameters['wavelengths'] is None or filter_parameters['transmissions'] is None):
-            raise Exception("-- Error: The transmission_shape parameter is set to Custom. Providing either filter_path parameter or both the wavelengths and transmissions parameters is mandatory.")
-
-        if filter_parameters['filter_path'] is not None and filter_parameters['wavelengths'] is not None and filter_parameters['transmissions'] is not None:
-            raise Exception("-- Error: The transmission_shape parameter is set to Custom. The filter_path cannot be provided together with the wavelengths and transmissions parameters.")
-                 
-        if filter_parameters['filter_path'] is not None: 
-            if not os.path.exists(filter_parameters['filter_path']):
-                raise Exception(f"-- Error: The provided filter_path parameter does not correspond to an existing path:\n{filter_parameters['filter_path']}")
-
-            if filter_parameters['filter_file_delimiter'] not in allowed_delimiters:
-                raise Exception(f"-- Error: The provided filter_file_delimiter parameter ({filter_parameters['filter_file_delimiter']}) is not supported. Please use one of the allowed delimiters: {allowed_delimiters}")
-
-            if filter_parameters['filter_file_header_rows'] < 0:
-                raise Exception(f"-- Error: The provided filter_file_header_rows parameter ({filter_parameters['filter_file_header_rows']}) is negative.")
-
-        else:
-            
-            for key in file_parameters:
-                if filter_parameters[key] is not None and not default_used[key]:
-                    print(f"-- Warning: The {key} parameter was provided but will be ignored because the filter_path is not provided ")
-
-        if filter_parameters['wavelengths'] is not None:
-            if (filter_parameters['wavelengths'] <= 0.).any():
-                raise Exception("-- Error: Negative and/or zero values detected in the provided wavelengths parameter")
-            
-            if (filter_parameters['wavelengths'] < 200.).any() or (filter_parameters['wavelengths'] > 3000.).any() :
-                raise Exception("-- Error: Values outside of the 200 - 3000 nm range detected in the provided wavelengths parameter")
-
-        if filter_parameters['transmissions'] is not None:
-            if (filter_parameters['transmissions'] <= 0.).any():
-                raise Exception("-- Error: Negative and/or zero values detected in the provided transmissions parameter")
-
-        if filter_parameters['transmissions'] is not None:
-            if (filter_parameters['transmissions'] > 1.).any():
-                raise Exception("-- Error: Values larger than 1. detected in the provided transmissions parameter")
-                                
-        for key in non_custom_parameters:
-            if filter_parameters[key] is not None and not default_used[key]:
-                print(f"-- Warning: The {key} parameter was provided but will be ignored because the transmission_shape is set to Custom ")
-
-    else:
-        
-        if filter_parameters['central_wavelength'] is None:
-            raise Exception("-- Error: The central_wavelength is a mandatory parameter when the transmission_shape is not set to 'Custom'")
-
-        if filter_parameters['bandwidth'] is None:
-            raise Exception("-- Error: The bandwidth is a mandatory parameter when the transmission_shape is not set to 'Custom'")
-
-        if filter_parameters['peak_transmission'] is None:
-            raise Exception("-- Error: The peak_transmission is a mandatory parameter when the transmission_shape is not set to 'Custom'")
-        
-        if filter_parameters['central_wavelength'] is not None:
-            if filter_parameters['central_wavelength'] <= 0.:
-                raise Exception(f"-- Error: The provided central_wavelength parameter ({filter_parameters['central_wavelength']}) is zero or negative")
-
-            if filter_parameters['central_wavelength'] < 200. or filter_parameters['central_wavelength'] > 3000.:
-                raise Exception(f"-- Error: The provided central_wavelength parameter ({filter_parameters['central_wavelength']}) is outside of the 200 - 3000 nm range")
-
-        if filter_parameters['bandwidth'] is not None:
-            if filter_parameters['bandwidth'] <= 0.:
-                raise Exception(f"-- Error: The provided bandwidth {filter_parameters['bandwidth']} is zero or negative")
-
-            if filter_parameters['bandwidth'] < 0.05 or filter_parameters['bandwidth'] > 100.:
-                raise Exception(f"-- Error: The provided bandwidth parameter ({filter_parameters['bandwidth']}) is outside of the 0.05 - 100 nm range")
-
-        if filter_parameters['peak_transmission'] is not None:
-            if filter_parameters['peak_transmission'] <= 0.:
-                raise Exception(f"-- Error: The provided peak_transmission parameter ({filter_parameters['peak_transmission']}) is zero or negative")
-            
-            if filter_parameters['peak_transmission'] > 1.:
-                raise Exception(f"-- Error: The provided peak_transmission parameter ({filter_parameters['peak_transmission']}) is larger than 1.")
-
-        for key in custom_parameters:
-            if filter_parameters[key] is not None and not default_used[key]:
-                print(f"-- Warning: The {key} parameter was provided but will be ignored because the transmission_shape is not set to Custom ")
-    
-    return()
-
-def check_filter_parameters(filter_parameters):
-    
-    default_parameters = {'transmission_shape' : None, 
-                          'AOI' : 0., 
-                          'ref_index_IF' : 2., 
-                          'filter_path' : None,
-                          'filter_file_delimiter' : ' ',
-                          'filter_file_header_rows' : 0,
-                          'wavelengths' : None,
-                          'transmissions' : None,
-                          'extra_shift' : 0., 
-                          'central_wavelength' : None, 
-                          'bandwidth' : None,
-                          'peak_transmission' : 1.}
-    
-    allowed_parameter_types = {'transmission_shape' : [str], 
-                               'AOI' : [float, np.float64, int, np.int64], 
-                               'ref_index_IF' : [float, np.float64, int, np.int64], 
-                               'filter_path' : [str, type(None)],
-                               'filter_file_delimiter' : [str],
-                               'filter_file_header_rows' : [int],
-                               'wavelengths' : [np.ndarray],
-                               'transmissions' : [np.ndarray],
-                               'extra_shift' : [float, int], 
-                               'central_wavelength' : [float, np.float64, int, np.int64], 
-                               'bandwidth' : [float, np.float64, int, np.int64],
-                               'peak_transmission' : [float, np.float64, int, np.int64]}
-    
-    check_parameter_type(parameters = filter_parameters,
-                         allowed_parameter_types = allowed_parameter_types) 
-        
-    filter_parameters,default_used = \
-        fill_missing_parameters(parameters = filter_parameters,
-                                default_parameters = default_parameters)    
-    
-    check_parameter_values(filter_parameters = filter_parameters, 
-                           default_used = default_used)
-
-    return(filter_parameters)

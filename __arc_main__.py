@@ -1,7 +1,8 @@
 import numpy as np
 from modules.make_gas import N2, O2, Ar, CO2, H2O
 from modules.functions import raman_lines, xsection_polarized
-from modules.filters import get_filter_transmission, check_filter_parameters
+from modules.filters import get_filter_transmission
+from modules.check_input import check_molar_fractions, check_filter_parameters
 
 class arc:
     def __init__(self, incident_wavelength, temperature = 288.15, 
@@ -99,7 +100,12 @@ class arc:
             peak_transmission: float 
         		The maximum transmission value. It will be ignored if the 
                 transmission_shape is set to 'Custom'. Defaults to 1.
-            
+
+            off_band_transmission: float 
+        		The transmission values at the off-band part of a Tophat filter. 
+                It will be ignored if the transmission_shape is not set to 
+                'Tophat'. Defaults to 0.
+                        
         """
 
         if backscattering == False and filter_parameters is not None:
@@ -119,17 +125,29 @@ class arc:
                                         'CO2': 0.000416,
                                         'H2O': 0.}
             else:
-                keys = ['N2', 'O2', 'Ar', 'CO2', 'H2O']
-                self.molar_fractions = dict(zip(keys, molar_fractions))
-
+                check_molar_fractions(molar_fractions)
+                self.molar_fractions = molar_fractions
+                
         if mode == 'vibrational_raman_N2':
-            self.molar_fractions = {'N2' : 1.}        
+            self.molar_fractions = {'N2' : 1.,
+                                    'O2' : 0.,
+                                    'Ar' : 0.,
+                                    'CO2': 0.,
+                                    'H2O': 0.}       
+            if molar_fractions != None:
+                print("--Warning: Providing molar_fractions only makes sense in rotational_raman mode. The provided molar_fractions will be ignored")
         
         if mode == 'vibrational_raman_O2':
-            self.molar_fractions = {'O2' : 1.}   
+            self.molar_fractions = {'N2' : 0.,
+                                    'O2' : 1.,
+                                    'Ar' : 0.,
+                                    'CO2': 0.,
+                                    'H2O': 0.}     
+            if molar_fractions != None:
+                print("--Warning: Providing molar_fractions only makes sense in rotational_raman mode. The provided molar_fractions will be ignored")
 
-        # Check filter_parameters and store into clss object
-        
+
+        # Check filter_parameters and store into class object
         if filter_parameters is not None:
             filter_parameters = check_filter_parameters(filter_parameters)          
         
