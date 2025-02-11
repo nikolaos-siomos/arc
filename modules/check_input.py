@@ -9,16 +9,19 @@ import os
 import numpy as np
 
 def check_molar_fractions(dictionary):
-    
+
     dict_name = 'molar_fractions'
-    keys = [key for key in dictionary.keys()]
-    vals = [val for val in dictionary.values()]
-    
     allowed_keys = ['N2', 'O2', 'Ar', 'CO2', 'H2O']
     allowed_values = [0., 1.]
     
+    if not isinstance(dictionary, dict):
+        raise Exception(f"--Error: The provided {dict_name} input parameter is not a dictionary:\n{dictionary}\nPlease create a dictionary including all of the following keys:\n{allowed_keys}")
+        
+    keys = [key for key in dictionary.keys()]
+    vals = [val for val in dictionary.values()]
+        
     is_allowed = [key in allowed_keys for key in keys]
-    print(is_allowed)
+
     if len(keys) == 0:
         raise Exception(f"--Error: The {dict_name} dictionary is empty. Please create a dictionary including all of the following keys:\n{allowed_keys}")
     elif all(is_allowed) and len(is_allowed) < len(allowed_keys):
